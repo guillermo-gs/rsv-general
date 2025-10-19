@@ -1,0 +1,100 @@
+services:
+  monolito-app:
+    build:
+      context: ./rsv-springboot
+      dockerfile: Dockerfile
+    container_name: ${NOMBRE_CONTENEDOR_MONOLITO}
+    restart: always
+
+    env_file:
+      - .env
+    ports:
+      - "${SERVER_PORT}:8080"
+    environment:
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL_MONOLITO}
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+
+      NOMBRE_CONTENEDOR_RABBITMQ: ${NOMBRE_CONTENEDOR_RABBITMQ}
+      SPRING_RABBITMQ_PORT: ${RABBITMQ_PORT}
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS}
+
+      CLOUD_AWS_REGION_STATIC: ${CLOUD_AWS_REGION_STATIC}
+      CLOUD_AWS_STACK_AUTO: ${CLOUD_AWS_STACK_AUTO}
+      CLOUD_AWS_CREDENTIALS_ACCESS_KEY: ${CLOUD_AWS_CREDENTIALS_ACCESS_KEY}
+      CLOUD_AWS_CREDENTIALS_SECRET_KEY: ${CLOUD_AWS_CREDENTIALS_SECRET_KEY}
+      S3BUCKETFACTURAS: ${S3BUCKETFACTURAS}
+      S3BUCKETFACTURASRECIBIDAS: ${S3BUCKETFACTURASRECIBIDAS}
+
+    depends_on:
+      monolito-mysql:
+        condition: service_healthy
+      rsvmsv-bancos-mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+
+  monolito-mysql:
+    image: mysql:8
+    container_name: ${NOMBRE_CONTENEDOR_MYSQL_MONOLITO}
+    restart: always
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE_MONOLITO}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+
+    ports:
+      - "${PORT_CONTENEDOR_MYSQL_MONOLITO}:3306"
+    volumes:
+      - ./volumes/monolito-mysql-data:/var/lib/mysql
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rsv-rabbit
+    restart: always
+    env_file:
+      - .env
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    #  RABBITMQ_LOAD_DEFINITIONS: /etc/rabbitmq/definitions.json
+    ports:
+      - "${RABBITMQ_PORT}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT}:15672"
+
+    volumes:
+      - ./volumes/rabbitmq_data:/var/lib/rabbitmq  # datos persistentes
+
+
+  rsvmsv-bancos-mysql:
+    image: mysql:8
+    container_name: ${NOMBRE_CONTENEDOR_MYSQL_BANCOS}
+    restart: always
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE_BANCOS}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+
+    ports:
+      - "${PORT_CONTENEDOR_MYSQL_BANCOS}:3306"
+    volumes:
+      - ./volumes/bancos-mysql-data:/var/lib/mysql
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

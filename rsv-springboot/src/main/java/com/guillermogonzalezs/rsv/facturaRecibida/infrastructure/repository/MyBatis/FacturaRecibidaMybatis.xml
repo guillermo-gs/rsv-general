@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.guillermogonzalezs.rsv.facturaRecibida.infrastructure.repository.MyBatis.FacturaRecibidaMybatis">
+
+    <resultMap id="facturaRecibidaResultMap" type="com.guillermogonzalezs.rsv.facturaRecibida.domain.entities.FacturaRecibida" autoMapping="true">
+        <result property="blobData" javaType="_byte[]" column="contenido" jdbcType="BLOB"/>
+    </resultMap>
+
+    <sql id="baseColumnsSelectSinPdf">
+        fr.id, fr.estado_id as estadoFacturaId, es.nombre as estadoFacturaNombre,
+        fr.proveedor,
+        fr.usuario_id as usuarioId, u.username as usuarioNombre, fr.importe,
+        fr.fecha_factura  as fechaFactura, fr.fecha_subida as  fechaSubida,
+        fr.accion_id accionFacturaId, ac.nombre accionFacturaNombre,
+        fr.contrato_id contratoId, fr.observaciones,
+        fr.UUID, fr.s3_bucket as s3Bucket, fr.s3_key as s3Key
+    </sql>
+    <sql id="baseColumnsSelectConPdf">
+        <include refid="baseColumnsSelectSinPdf"></include>, fr.contenido
+    </sql>
+    <sql id="baseColumnsInsert"></sql>
+
+    <sql id="from">
+            from factura_recibida fr INNER JOIN users u on  u.id = fr.usuario_id
+            INNER JOIN accion_factura_recibida ac on ac.id = fr.accion_id
+            INNER JOIN estado_factura_recibida es on es.id = fr.estado_id
+            LEFT OUTER JOIN contrato co on co.id = fr.contrato_id
+
+    </sql>
+
+    <insert id="create"  parameterType="java.util.List">
+            insert into factura_recibida (estado_id, usuario_id, contenido, fecha_factura, fecha_subida, observaciones,
+                                          proveedor, importe, accion_id, UUID, s3_bucket, s3_key)
+            VALUES (
+                    #{factura.estadoFacturaId},
+                    #{factura.usuarioId},
+                    #{factura.contenido},
+                    #{factura.fechaFactura},
+                    #{factura.fechaSubida},
+                    #{factura.observaciones},
+                    #{factura.proveedor},
+                    #{factura.importe},
+                    #{factura.accionFacturaId},
+                    #{factura.UUID},
+                    #{factura.s3Bucket},
+                    #{factura.s3Key}
+                   )
+    </insert>
+    <update id="updateSinFichero"  parameterType="com.guillermogonzalezs.rsv.facturaRecibida.domain.entities.FacturaRecibida">
+        update factura_recibida set
+          estado_id=#{ factura.estadoFacturaId},
+          usuario_id=#{ factura.usuarioId},
+          fecha_factura=#{factura.fechaFactura},
+          observaciones=#{factura.observaciones},
+          proveedor=#{factura.proveedor},
+          importe=#{factura.importe},
+          accion_id=#{factura.accionFacturaId},
+          UUID=#{factura.UUID},
+          s3_bucket=#{factura.s3Bucket},
+          s3_key=#{factura.s3Key}
+        where id = #{ factura.id}
+    </update>
+
+    <update id="updateConFichero"  parameterType="java.util.List">
+    update factura_recibida set
+        contenido=#{ factura.contenido },
+        estado_id=#{ factura.estadoFacturaId},
+        usuario_id=#{ factura.usuarioId},
+        fecha_factura=#{factura.fechaFactura},
+        observaciones=#{factura.observaciones},
+        proveedor=#{factura.proveedor},
+        importe=#{factura.importe},
+        accion_id=#{factura.accionFacturaId},
+        s3_bucket=#{factura.s3Bucket},
+        s3_key=#{factura.s3Key},
+        where id = #{ factura.id}
+    where id = #{ factura.id}
+    </update>
+
+
+    <delete id="delete"></delete>
+
+    <select id="findAll" resultType="com.guillermogonzalezs.rsv.facturaRecibida.domain.entities.FacturaRecibida">
+        select <include refid="baseColumnsSelectSinPdf"></include>
+        <include refid="from"></include>
+        order by fr.id desc
+
+    </select>
+    <select id="findById" resultType="com.guillermogonzalezs.rsv.facturaRecibida.domain.entities.FacturaRecibida">
+        select <include refid="baseColumnsSelectConPdf"></include>
+        <include refid="from"></include>
+        WHERE fr.id = #{id,  jdbcType=INTEGER}
+    </select>
+
+    <select id="findByUUID" resultType="com.guillermogonzalezs.rsv.facturaRecibida.domain.entities.FacturaRecibida">
+        select <include refid="baseColumnsSelectConPdf"></include>
+        <include refid="from"></include>
+        WHERE fr.UUID = #{UUID}
+    </select>
+
+
+
+</mapper>

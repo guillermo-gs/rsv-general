@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.guillermogonzalezs.rsv.factura.infrastructure.repository.FacturaMybatis">
+
+    <resultMap id="facturaResultMap" type="com.guillermogonzalezs.rsv.factura.domain.entities.Factura" autoMapping="true">
+    </resultMap>
+
+
+
+
+    <sql id="select">
+        SELECT
+            f.id,
+            f.UUID,
+            f.serie_id serieId,
+            fs.tipo serieTipo,
+            fs.nombre serieNombre,
+            f.codigo,
+            f.fecha, f.nombre, f.nif, f.descripcion, f.cuenta_bancaria cuentaBancaria,
+            f.estadoFactura_id estadoFacturaId, ef.nombre  estadoFacturaNombre,
+            f.contrato_id contratoId, f.fecha_cobro fechaCobro,
+            f.observaciones, f.direccion, f.poblacion, f.cpostal CPostal,
+            (select sum(base) base from factura_item fi where fi.factura_id = f.id) base,
+            (select sum(iva) base from factura_item fi where fi.factura_id = f.id) iva,
+            (select sum(base+iva-irpf) base from factura_item fi where fi.factura_id = f.id) total,
+            (select sum(irpf) base from factura_item fi where fi.factura_id = f.id) irpf,
+            f.s3_bucket s3Bucket, f.s3_key s3Key
+            from factura f
+                 INNER JOIN estado_factura ef on f.estadoFactura_id = ef.id
+                 INNER JOIN factura_serie fs  on f.serie_id  = fs.id
+    </sql>
+    <sql id="update">
+        UPDATE factura
+        SET serie_id = #{ factura.serieId,jdbcType=INTEGER },
+            UUID =  #{ factura.UUID,jdbcType=VARCHAR },
+            codigo = #{ factura.codigo,jdbcType=VARCHAR },
+            fecha = #{ factura.fecha,jdbcType=DATE },
+            nombre = #{ factura.nombre,jdbcType=VARCHAR },
+            nif = #{ factura.nif,jdbcType=VARCHAR },
+            descripcion = #{ factura.descripcion,jdbcType=VARCHAR },
+            cuenta_bancaria = #{ factura.cuentaBancaria,jdbcType=VARCHAR },
+            estadoFactura_id = #{ factura.estadoFacturaId,jdbcType=INTEGER },
+            contrato_id = #{ factura.contratoId,jdbcType=INTEGER },
+            fecha_cobro = #{ factura.fechaCobro,jdbcType=DATE },
+            observaciones = #{ factura.observaciones,jdbcType=VARCHAR },
+            direccion = #{ factura.direccion,jdbcType=VARCHAR },
+            poblacion = #{ factura.poblacion,jdbcType=VARCHAR },
+            cpostal = #{ factura.cpostal,jdbcType=VARCHAR },
+            pdf = #{ factura.pdf, jdbcType=VARCHAR },
+            s3_bucket = #{ factura.s3Bucket, jdbcType=VARCHAR },
+            s3_key = #{ factura.s3Key, jdbcType=VARCHAR }
+    </sql>
+    <insert id="grabarFacturaAutomatica"  useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO factura
+        (
+        UUID,
+        serie_id,
+        codigo,
+        fecha,
+        nombre,
+        nif,
+        descripcion,
+        cuenta_bancaria,
+        estadoFactura_id,
+        contrato_id,
+        fecha_cobro,
+        observaciones,
+        direccion,
+        poblacion,
+        cpostal,
+        pdf,
+        s3_bucket,
+        s3_key)
+        VALUES(
+        #{factura.UUID, jdbcType=VARCHAR },
+        #{factura.serieId, jdbcType=INTEGER },
+        #{factura.codigo, jdbcType=INTEGER },
+        #{factura.fecha, jdbcType=DATE },
+        #{factura.nombre, jdbcType=VARCHAR },
+        #{factura.nif, jdbcType=VARCHAR },
+        #{factura.descripcion, jdbcType=VARCHAR },
+        #{factura.cuentaBancaria, jdbcType=VARCHAR },
+        #{factura.estadoFacturaId, jdbcType=INTEGER },
+        #{factura.contratoId, jdbcType=INTEGER },
+        #{factura.fechaCobro, jdbcType=DATE },
+        #{factura.observaciones, jdbcType=VARCHAR },
+        #{factura.direccion, jdbcType=VARCHAR },
+        #{factura.poblacion, jdbcType=VARCHAR },
+        #{factura.cpostal,  jdbcType=VARCHAR },
+        #{factura.pdf,  jdbcType=VARCHAR },
+        #{factura.s3Bucket,  jdbcType=VARCHAR },
+        #{factura.s3Key,  jdbcType=VARCHAR }
+        );
+    </insert>
+    <insert id="grabarItemAutomatico"  useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        <foreach collection="factura.items" item="i" separator=";" >
+            <if test="i.base != null and  i.base !=0  ">
+            INSERT INTO factura_item (factura_id, base, iva, descripcion, irpf)
+            VALUES(
+            #{factura.id },
+             <if test="i.base != null"> #{i.base, jdbcType=DOUBLE } </if>  ,
+            #{i.iva, jdbcType=DOUBLE },
+            #{i.descripcion, jdbcType=VARCHAR },
+            #{i.irpf, jdbcType=DOUBLE }
+            )
+            </if>
+        </foreach>
+
+    </insert>
+
+    <update id="update" parameterType="com.guillermogonzalezs.rsv.factura.domain.entities.Factura" >
+        <include refid="update"></include>
+        WHERE UUID =  #{ factura.UUID ,jdbcType=VARCHAR };
+    </update>
+
+    <update id="updateById" parameterType="com.guillermogonzalezs.rsv.factura.domain.entities.Factura" >
+        <include refid="update"></include>
+        WHERE id =  #{ factura.id ,jdbcType=VARCHAR };
+    </update>
+
+    <select id="findAll" resultType="com.guillermogonzalezs.rsv.factura.domain.entities.Factura">
+        <include refid="select"></include>
+    </select>
+    <select id="findById" resultType="com.guillermogonzalezs.rsv.factura.domain.entities.Factura">
+        <include refid="select"></include>
+        WHERE f.id = #{id,  jdbcType=INTEGER}
+    </select>
+    <select id="findByUUID" resultType="com.guillermogonzalezs.rsv.factura.domain.entities.Factura">
+        <include refid="select"></include>
+        WHERE f.UUID = #{UUID,  jdbcType=VARCHAR}
+    </select>
+
+
+    <select id="findItemsByFacturaId" resultType="com.guillermogonzalezs.rsv.factura.domain.entities.Item">
+        select id, factura_id facturaId, base, iva, irpf, descripcion
+        from factura_item
+        where factura_id =  #{facturaId,  jdbcType=INTEGER}
+
+    </select>
+    <select id="siguienteCodigo" resultType="java.lang.Integer">
+        select max(codigo)+1 from factura f where serie_id =  #{serieId }
+    </select>
+
+</mapper>

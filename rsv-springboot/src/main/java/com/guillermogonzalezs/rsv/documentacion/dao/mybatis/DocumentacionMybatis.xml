@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.guillermogonzalezs.rsv.documentacion.dao.mybatis.DocumentacionMybatis">
+
+    <resultMap id="documentacionResultMap" type="com.guillermogonzalezs.rsv.documentacion.entity.Documentacion" autoMapping="true">
+    </resultMap>
+
+    <sql id="baseColumnsSelect">
+         d.id, d.UUID, d.nombre, dt.nombre as tipoDocumento,
+        d.fecha_insercion as fechaInsercion, d.fecha_documento as fechaDocumento,
+        d.descripcion, d.s3_bucket as s3Bucket, d.s3_key as s3Key
+    </sql>
+
+    <insert id="create"  parameterType="java.util.List">
+        insert into documento (
+            UUID, usuario_insercion_id, nombre, tipo_documento_id, fecha_insercion,
+            fecha_documento, descripcion, s3_bucket, s3_key
+        )
+        VALUES (
+                   #{documento.UUID},
+                   #{documento.usuarioInsercionId},
+                   #{documento.nombre},
+                   #{documento.tipoDocumentoId},
+                   NOW(),
+                   #{documento.fechaDocumento},
+                   #{documento.descripcion},
+                   #{documento.s3Bucket},
+                   #{documento.s3Key}
+               );
+
+        insert into entidades_documentos (id_entidad, UUID_documento )
+        values( #{documento.tipoDocumentoId}, #{documento.UUID} );
+    </insert>
+
+
+
+
+    <sql id="from">
+            from documento d
+            INNER JOIN documento_tipo dt on dt.id = d.tipo_documento_id
+    </sql>
+
+
+    <select id="findAll" resultType="com.guillermogonzalezs.rsv.documentacion.entity.Documentacion">
+        select <include refid="baseColumnsSelect"></include>
+        <include refid="from"></include>
+        order by d.id desc
+    </select>
+
+    <select id="findByUUID" resultType="com.guillermogonzalezs.rsv.documentacion.entity.Documentacion">
+        select <include refid="baseColumnsSelect"></include>
+        <include refid="from"></include>
+        where d.UUID = #{documento.UUID}
+    </select>
+
+    <select id="findTipos" resultType="com.guillermogonzalezs.rsv.documentacion.entity.DocumentacionTipo">
+        select id, nombre, descripcion, activo, s3_bucket as s3Bucket
+        from documento_tipo
+        where activo = 1
+    </select>
+
+    <select id="relacionarTipo" resultType="com.guillermogonzalezs.rsv.documentacion.entity.DocumentacionTipoRel">
+        insert into documento_tipo_rel (UUID_docu, documento_tipo_id)
+        values (
+            #{relacion.UUIDDocu},
+            #{relacion.tipoDocumentoId}
+        )
+    </select>
+</mapper>

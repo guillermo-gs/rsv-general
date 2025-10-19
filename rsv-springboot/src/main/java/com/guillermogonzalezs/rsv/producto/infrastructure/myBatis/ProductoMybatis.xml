@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.guillermogonzalezs.rsv.producto.infrastructure.myBatis.ProductoMybatis">
+
+    <resultMap id="productoResultMap" type="com.guillermogonzalezs.rsv.producto.domain.Producto" autoMapping="true">
+        <result property="usuarioId" column="usuario_id"/>
+        <result property="referenciaCatastral" column="referencia_catastral"/>
+        <result property="metrosCatastral" column="metros_catastral"/>
+        <result property="usoCatastral" column="uso_catastral"/>
+        <result property="tieneHipoteca" column="tiene_hipoteca"/>
+    </resultMap>
+
+    <sql id="selectProducto">
+        select
+            p.id, p.nombre, usuario_id, descripcion, activo, referencia_catastral , metros_catastral , uso_catastral ,
+            alquilable, tiene_hipoteca ,
+            CASE
+                WHEN (select fecha_baja from contrato c	where c.producto_id = p.id order by fecha_alta desc LIMIT 1 ) is null THEN
+                    (select id 	from contrato c where c.producto_id = p.id order by fecha_alta desc LIMIT 1 )
+                ELSE null
+                END contratoId,
+            CASE
+                WHEN (select fecha_baja from contrato c	where c.producto_id = p.id order by fecha_alta desc LIMIT 1 ) is null THEN false
+                ELSE true
+                END libre,
+            CASE
+                WHEN (select fecha_baja from contrato c	where c.producto_id = p.id order by fecha_alta desc LIMIT 1 ) is null THEN
+                    (select fecha_alta from contrato c where c.producto_id = p.id order by fecha_alta desc LIMIT 1 )
+                ELSE
+                    NULL
+                END fechaAlta,
+            CASE
+                WHEN (select fecha_baja from contrato c	where c.producto_id = p.id order by fecha_alta desc LIMIT 1 ) is null THEN
+                    (select c.importe_alquiler from contrato c where c.producto_id = p.id order by fecha_alta desc LIMIT 1 )
+                ELSE
+                    NULL
+                END importeAlquiler,
+            CASE
+                WHEN (select fecha_baja from contrato c	where c.producto_id = p.id order by fecha_alta desc LIMIT 1 ) is null THEN
+                    (select GROUP_CONCAT(cl.nombre, " ",  COALESCE(cl.apellidos, "") SEPARATOR ' - ') from cliente cl, contrato co, clientes_contratos cc where cl.id = cc.cliente_id  and co.id = cc.contrato_id and co.producto_id = p.id and co.fecha_baja is null )
+                ELSE
+                    ""
+                END inquilino,
+            CASE
+                WHEN (select fecha_baja from contrato c	where c.producto_id = p.id order by fecha_alta desc LIMIT 1 ) is null THEN
+                    (select c.fecha_renovacion from contrato c where c.producto_id = p.id order by fecha_alta desc LIMIT 1 )
+                ELSE
+                    NULL
+                END fechaRenovacion
+        from producto p LEFT JOIN fos_user u
+                                  ON p.usuario_id = u.id
+    </sql>
+
+    <select id="findAll" resultMap="productoResultMap">
+     <include refid="selectProducto"></include>
+    </select>
+    <select id="findById" resultType="com.guillermogonzalezs.rsv.producto.domain.Producto">
+        <include refid="selectProducto"></include>
+        where p.id = #{id}
+    </select>
+
+</mapper>

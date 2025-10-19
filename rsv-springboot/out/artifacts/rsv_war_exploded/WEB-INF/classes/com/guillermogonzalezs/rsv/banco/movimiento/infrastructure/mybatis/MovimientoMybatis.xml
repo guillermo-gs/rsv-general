@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+    <mapper namespace="com.guillermogonzalezs.rsv.banco.movimiento.infrastructure.mybatis.MovimientoMybatis">
+
+    <resultMap id="tipoMovimientoResultMap" type="com.guillermogonzalezs.rsv.banco.movimiento.domain.Movimiento" autoMapping="true">
+        <result property= "contratoId" column="contrato_id" />
+        <result property= "fechaOperacion" column="fecha_operacion" />
+        <result property= "fechaValor" column="fecha_valor" />
+        <result property= "tipoMovimientoId" column="bancos_movimiento_tipo_id" />
+        <result property= "productoId" column="producto_id" />
+        <result property= "facturaRecibidaId" column="factura_recibida_id" />
+        <result property= "debeHaber" column="debe_haber" />
+    </resultMap>
+
+    <sql id="select">
+        SELECT id, contrato_id, cuenta, fecha_operacion, fecha_valor, importe, concepto, observaciones, referencia1, referencia2, detalle, bancos_movimiento_tipo_id,
+               producto_id, factura_recibida_id, debe_haber
+        FROM bancos_n45
+    </sql>
+
+    <select id="findAll" resultMap="tipoMovimientoResultMap">
+        <include refid="select"></include>
+        order by fecha_operacion desc;
+
+    </select>
+
+    <select id="findById" resultMap="tipoMovimientoResultMap">
+        <include refid="select"></include>
+        WHERE id = #{id,  jdbcType=INTEGER}
+    </select>
+
+    <select id="findByContrato" resultMap="tipoMovimientoResultMap">
+        <include refid="select"></include>
+        WHERE contraroId = #{idContrato,  jdbcType=INTEGER}
+    </select>
+
+    <update id="update" parameterType="com.guillermogonzalezs.rsv.banco.movimiento.domain.Movimiento">
+        UPDATE bancos_n45
+        SET contrato_id               =  #{ movimiento.contratoId, jdbcType=INTEGER},
+            observaciones             =  #{ movimiento.observaciones, jdbcType=VARCHAR},
+            bancos_movimiento_tipo_id =  #{ movimiento.tipoMovimientoId, jdbcType=INTEGER},
+            producto_id               =  #{ movimiento.productoId, jdbcType=INTEGER},
+            factura_recibida_id       =  #{ movimiento.facturaRecibidaId, jdbcType=INTEGER}
+        WHERE id = #{movimiento.id, jdbcType=INTEGER}
+    </update>
+
+    <insert id="grabarLista" parameterType="java.util.List" useGeneratedKeys="true"  keyProperty="id">
+        INSERT INTO rosevigon.bancos_n45
+        (
+        cuenta,
+        fecha_operacion,
+        fecha_valor,
+        importe,
+        referencia1,
+        referencia2,
+        detalle,
+         debe_haber)
+        VALUES
+        <foreach collection="movimientos" item="movimiento"  index="index"  separator=','>
+        (
+        #{movimiento.cuenta, jdbcType=VARCHAR},
+        #{movimiento.fechaOperacion,jdbcType=DATE},
+        #{movimiento.fechaValor,jdbcType=DATE},
+        #{movimiento.importe,jdbcType=DECIMAL},
+        #{movimiento.referencia1, jdbcType=VARCHAR},
+        #{movimiento.referencia2, jdbcType=VARCHAR},
+        #{movimiento.detalle, jdbcType=VARCHAR},
+        #{movimiento.debeHaber, jdbcType=VARCHAR})
+        </foreach>
+    </insert>
+    <insert id="grabar" parameterType="com.guillermogonzalezs.rsv.banco.movimiento.domain.Movimiento">
+                INSERT INTO rosevigon.bancos_n45
+                (
+                cuenta,
+                fecha_operacion,
+                fecha_valor,
+                importe,
+                referencia1,
+                referencia2,
+                detalle,
+                debe_haber )
+                VALUES
+                (
+                #{movimiento.cuenta, jdbcType=VARCHAR},
+                #{movimiento.fechaOperacion,jdbcType=DATE},
+                #{movimiento.fechaValor,jdbcType=DATE},
+                #{movimiento.importe,jdbcType=DECIMAL},
+                #{movimiento.referencia1, jdbcType=VARCHAR},
+                #{movimiento.referencia2, jdbcType=VARCHAR},
+                #{movimiento.detalle, jdbcType=VARCHAR},
+                #{movimiento.debeHaber, jdbcType=VARCHAR})
+
+    </insert>
+
+
+</mapper>

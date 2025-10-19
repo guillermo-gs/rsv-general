@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.guillermogonzalezs.rsv.factura.infrastructure.repository.FacturaEstadoMybatis">
+
+    <resultMap id="facturaResultMap" type="com.guillermogonzalezs.rsv.factura.domain.entities.FacturaEstado" autoMapping="true">
+
+    </resultMap>
+
+
+
+
+    <sql id="select">
+        SELECT id, nombre, activo
+            from estado_factura ef
+    </sql>
+
+
+    <select id="findAll" resultType="com.guillermogonzalezs.rsv.factura.domain.entities.FacturaEstado">
+        <include refid="select"></include>
+    </select>
+
+
+</mapper>

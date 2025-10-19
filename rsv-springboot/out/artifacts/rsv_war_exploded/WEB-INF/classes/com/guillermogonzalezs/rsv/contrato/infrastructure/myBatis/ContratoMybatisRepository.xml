@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.guillermogonzalezs.rsv.contrato.infrastructure.myBatis.ContratoMybatisRepository">
+
+    <resultMap id="contratoResultMap" type="com.guillermogonzalezs.rsv.contrato.domain.Contrato" autoMapping="true">
+        <result property="productoId" column="producto_id"/>
+        <result property="fechaAlta" column="fecha_alta"/>
+        <result property="fechaBaja" column="fecha_baja"/>
+        <result property="fechaRenovacion" column="fecha_renovacion"/>
+        <result property="porcentajeIrpf" column="porcentaje_irpf"/>
+        <result property="porcentajeIva" column="porcentaje_iva"/>
+        <result property="pagoAgua" column="pago_agua"/>
+        <result property="pagoAire" column="pago_aire"/>
+        <result property="pagoComunidad" column="pago_comunidad"/>
+        <result property="pagoGas" column="pago_gas"/>
+        <result property="pagoLuz" column="pago_luz"/>
+        <result property="importeAlquiler" column="importe_alquiler"/>
+        <result property="fechaUltimaFactura" column="ultima_factura"/>
+        <result property="direccionFactura" column="direccion_factura"/>
+        <result property="poblacionFactura" column="poblacion_factura"/>
+        <result property="cpostalFactura" column="cpostal_factura"/>
+        <result property="titularFactura" column="titular_factura"/>
+        <result property="NIFFactura" column="nif_factura"/>
+    </resultMap>
+
+    <sql id="select">
+        select
+            c.id, c.producto_id , p.nombre, c.fecha_alta, c.fecha_baja, c.fecha_renovacion , c.descripcion, c.observaciones,
+            c.porcentaje_irpf , c.porcentaje_iva , c.pago_agua , c.pago_aire , c.pago_comunidad , c.pago_gas  ,
+            c.pago_luz , c.importe_alquiler ,
+            c.direccion_factura , c.poblacion_factura , c.cpostal_factura ,
+            c.titular_factura , nif_factura,
+            case
+                when c.fecha_baja is null then true
+                else false
+                end activo,
+            (
+                select
+                    GROUP_CONCAT(cl.nombre, " ", coalesce(cl.apellidos, "") separator ' / ')
+                from
+                    cliente cl,
+                    contrato co,
+                    clientes_contratos cc
+                where
+                    cl.id = cc.cliente_id
+                  and co.id = cc.contrato_id
+                  and cc.contrato_id = c.id ) personas,
+            (
+                select
+                    max(fecha)
+                from
+                    factura
+                where
+                    contrato_id = c.id) ultima_factura,
+
+               (
+                select
+                    min(cc.cliente_id)
+                from
+                    cliente cl,
+                    contrato co,
+                    clientes_contratos cc
+                where
+                  cl.id = cc.cliente_id
+                  and co.id = cc.contrato_id
+                  and cc.contrato_id = c.id)  personaId
+
+        from
+            contrato c,
+            producto p
+        where
+            p.id = c.producto_id
+    </sql>
+
+    <sql id="baseColumnsInsert">
+        fechaAlta, producto_id, importe, porcentaje_iva, porcentaje_irpf
+    </sql>
+
+    <insert id="create" useGeneratedKeys="true" keyProperty="con.id" keyColumn="id">
+        INSERT INTO contrato(<include refid="baseColumnsInsert"/>)
+        VALUES (
+        #{con.fechaAlta, jdbcType=DATE},
+        #{con.telefono, jdbcType=INTEGER},
+        #{con.importeAlquiler, jdbcType=DOUBLE},
+        #{con.porcentajeIva, jdbcType=INTEGER},
+        #{con.porcentajeIrpf, jdbcType=INTEGER}
+        );
+
+        INSERT INTO clientes_contratos (contrato_id, cliente_id)
+        values (#{con.id}
+                , #{cli.id})
+    </insert>
+
+
+    <select id="findAll" resultMap="contratoResultMap">
+        <include refid="select"></include>
+    </select>
+
+    <select id="findActivos" resultMap="contratoResultMap">
+        <include refid="select"></include>
+        and c.fecha_alta is null
+    </select>
+
+
+    <select id="findMovimientosContrato" resultType="com.guillermogonzalezs.rsv.banco.movimiento.domain.Movimiento">
+       select * from bancos_n45
+    </select>
+    <select id="findById" resultMap="contratoResultMap">
+        <include refid="select"></include>
+        and c.id = #{id}
+    </select>
+
+    <select id="findSinFactura" resultMap="contratoResultMap">
+        <include refid="select"></include>
+        and p.alquilable = 1
+        and c.fecha_alta <![CDATA[ <= ]]> #{fechaIni, jdbcType=DATE}
+        and c.fecha_baja is null and c.id not in (select f.contrato_id from factura f where fecha BETWEEN #{fechaIni, jdbcType=DATE} and #{fechaFin, jdbcType=DATE}  )
+    </select>
+
+
+</mapper>

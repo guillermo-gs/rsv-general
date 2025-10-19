@@ -1,0 +1,19 @@
+{
+  "AGUA_CALIENTE_PERAL": {
+    "keywords": [
+      "COR CDAD.DE PROP.ISAAC PERAL, 42",
+      "Agua Caliente Sanitaria",
+      "15o F"
+    ],
+    "valores": {
+      "tipoMovimientoId": 7
+    }
+  },
+  "WILLIAN": {
+    "keywords": ["WILLIAN"],
+    "valores": {
+      "idNombre": 3,
+      "idPais": 23
+    }
+  }
+}

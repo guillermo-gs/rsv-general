@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+    <mapper namespace="com.guillermogonzalezs.rsv.banco.tipoMovimiento.infrastructure.mybatis.TipoMovimientoMybatis">
+
+    <resultMap id="tipoMovimientoResultMap" type="com.guillermogonzalezs.rsv.banco.tipoMovimiento.domain.TipoMovimiento" autoMapping="true">
+        <result property= "gastoIngreso" column="gasto_ingreso" />
+        <result property= "imputableContrato" column="imputable_contrato" />
+        <result property= "imputableInmueble" column="imputable_inmueble" />
+    </resultMap>
+
+    <select id="findAll" resultMap="tipoMovimientoResultMap">
+        SELECT id, nombre, gasto_ingreso, activo,   imputable_contrato, imputable_inmueble
+        FROM bancos_movimientos_tipo ORDER BY nombre
+    </select>
+
+
+</mapper>

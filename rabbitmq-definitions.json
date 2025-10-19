@@ -1,0 +1,60 @@
+{
+  "users": [
+    {
+      "name": "rosevigona",
+      "password": "pass1234",
+      "tags": "administrator",
+      "permissions": [
+        {
+          "vhost": "/",
+          "configure": ".*",
+          "write": ".*",
+          "read": ".*"
+        }
+      ]
+    }
+  ],
+  "vhosts": [
+    { "name": "/" }
+  ],
+  "queues": [
+    {
+      "name": "movimientos.queue",
+      "vhost": "/",
+      "durable": true,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "movimientos.queue.dlq"
+      }
+    },
+    {
+      "name": "movimientos.queue.dlq",
+      "vhost": "/",
+      "durable": true
+    }
+  ],
+  "exchanges": [
+    {
+      "name": "",
+      "vhost": "/",
+      "type": "direct",
+      "durable": true
+    }
+  ],
+  "bindings": [
+    {
+      "source": "",
+      "vhost": "/",
+      "destination": "movimientos.queue",
+      "destination_type": "queue",
+      "routing_key": "movimientos.queue"
+    },
+    {
+      "source": "",
+      "vhost": "/",
+      "destination": "movimientos.queue.dlq",
+      "destination_type": "queue",
+      "routing_key": "movimientos.queue.dlq"
+    }
+  ]
+}
